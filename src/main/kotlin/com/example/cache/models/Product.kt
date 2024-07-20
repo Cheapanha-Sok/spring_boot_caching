@@ -12,4 +12,4 @@ data class Product(
     var name: String? = null,
     var description: String? = null,
     var price: Double? = 0.00,
-): Serializable
+)
