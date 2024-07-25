@@ -1,30 +1,35 @@
 package com.example.cache.controllers
 
+import com.example.cache.cache.ProductService
 import com.example.cache.models.Product
-import com.example.cache.repository.ProductRepository
-import org.apache.coyote.BadRequestException
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.cache.annotation.CacheConfig
-import org.springframework.cache.annotation.Cacheable
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("api/v1/products")
-@CacheConfig(cacheNames = ["products"])
+@RequestMapping("api/v1/product")
 class ProductController {
 
-    @Autowired lateinit var productRepository: ProductRepository
-    private val log: Logger = LoggerFactory.getLogger(javaClass)
+    @Autowired
+    lateinit var productService: ProductService
 
     @GetMapping("{product_id}")
-    @Cacheable(value = ["products"], key = "#productId")
-    fun detail(@PathVariable("product_id") productId: Long): Product {
-        log.info("Getting product with ID {}.", productId)
-        return productRepository.findById(productId).orElseThrow { BadRequestException("Product not found") }
+    fun detail(@PathVariable("product_id") productId: Long): Product? {
+        return productService.detail(productId)
+    }
+    @GetMapping("/list")
+    fun list(): List<Product> {
+        return productService.list()
+    }
+    @PostMapping
+    fun add(@RequestBody product: Product): Product {
+        return productService.create(product)
+    }
+    @PutMapping("{product_id}")
+    fun update(@PathVariable("product_id") productId: Long, @RequestBody product: Product): Product {
+        return productService.update(productId, product)
+    }
+    @DeleteMapping("{product_id}")
+    fun delete(@PathVariable("product_id") productId: Long) {
+        return productService.delete(productId)
     }
 }
