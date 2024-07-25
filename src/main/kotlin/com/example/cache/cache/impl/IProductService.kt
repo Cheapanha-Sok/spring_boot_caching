@@ -21,13 +21,13 @@ class IProductService : ProductService {
     lateinit var productRepository: ProductRepository
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
-    @Cacheable(cacheNames = ["products"])
+    @Cacheable(cacheNames = ["products"], unless = "#result == null")
     override fun list(): List<Product> {
         log.info("Getting list of products")
         return productRepository.findAll()
     }
 
-    @Cacheable(cacheNames = ["products"], key = "#id")
+    @Cacheable(cacheNames = ["products"], key = "#id", unless = "#result == null")
     override fun detail(id: Long): Product? {
         log.info("Getting product with id {}", id)
         return productRepository.findByIdOrNull(id)
@@ -43,19 +43,14 @@ class IProductService : ProductService {
     @CacheEvict(cacheNames = ["products"], allEntries = true)
     override fun update(id: Long, updateProduct: Product): Product {
         log.info("Updating product with id {}", id)
-        val product = productRepository.findByIdOrNull(id)
-        return if (product != null) {
-            product.name = updateProduct.name
-            product.description = updateProduct.description
-            product.price = updateProduct.price
-            productRepository.save(product)
-        } else {
-            throw IllegalArgumentException("Product not found")
-        }
-
+        val product = productRepository.findById(id).orElseThrow { IllegalArgumentException("Product not found") }
+        product.name = updateProduct.name
+        product.description = updateProduct.description
+        product.price = updateProduct.price
+        productRepository.save(product).let { return it }
     }
 
-    @CacheEvict(value = ["products"], key = "#id" , allEntries = true)
+    @CacheEvict(value = ["products"], key = "#id", allEntries = true)
     override fun delete(id: Long) {
         val product = productRepository.findById(id).orElseThrow { IllegalArgumentException("Product not found") }
         log.info("Deleting product with id {}", id)
